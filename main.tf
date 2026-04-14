@@ -138,3 +138,9 @@ resource "azurerm_resource_group_policy_assignment" "assign_enforce_https" {
   resource_group_id    = azurerm_resource_group.rg.id
   policy_definition_id = azurerm_policy_definition.enforce_https.id
 }
+
+resource "azurerm_network_security_group" "nsg_policy_test" {
+  name                = "nsgpolicytest123"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+}
