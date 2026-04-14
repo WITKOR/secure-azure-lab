@@ -4,43 +4,18 @@ resource "azurerm_resource_group" "rg" {
   tags     = var.tags
 }
 
-resource "azurerm_virtual_network" "vnet" {
-  name                = var.vnet_name
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  address_space       = var.vnet_address_space
-  tags                = var.tags
-}
+module "network" {
+  source = "./modules/network"
 
-resource "azurerm_subnet" "subnet" {
-  name                 = "subnet-secure"
-  resource_group_name  = azurerm_resource_group.rg.name
-  virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = ["10.0.1.0/24"]
-}
-
-resource "azurerm_network_security_group" "nsg" {
-  name                = "nsg-secure"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  tags                = var.tags
-
-  security_rule {
-    name                       = "allow-admin-from-my-ip"
-    priority                   = 100
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "22"
-    source_address_prefix      = var.allowed_admin_ip
-    destination_address_prefix = "*"
-  }
-}
-
-resource "azurerm_subnet_network_security_group_association" "assoc" {
-  subnet_id                 = azurerm_subnet.subnet.id
-  network_security_group_id = azurerm_network_security_group.nsg.id
+  resource_group_name     = azurerm_resource_group.rg.name
+  location                = azurerm_resource_group.rg.location
+  tags                    = var.tags
+  vnet_name               = var.vnet_name
+  vnet_address_space      = var.vnet_address_space
+  subnet_name             = var.subnet_name
+  subnet_address_prefixes = var.subnet_address_prefixes
+  nsg_name                = var.nsg_name
+  allowed_admin_ip        = var.allowed_admin_ip
 }
 
 resource "azurerm_storage_account" "storage" {
@@ -137,10 +112,4 @@ resource "azurerm_resource_group_policy_assignment" "assign_enforce_https" {
   name                 = "assign-enforce-https"
   resource_group_id    = azurerm_resource_group.rg.id
   policy_definition_id = azurerm_policy_definition.enforce_https.id
-}
-
-resource "azurerm_network_security_group" "nsg_policy_test" {
-  name                = "nsgpolicytest123"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
 }
